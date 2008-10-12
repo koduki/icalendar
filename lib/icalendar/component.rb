@@ -125,6 +125,22 @@ module Icalendar
       "END:#{@name.upcase}\r\n"
     end
 
+    # split by MAX_LINE_LENGTH( support multibyte char(utf8 only))
+    def _split_by_maxlen str
+      xs = str.split(//u)
+      r = ""
+      tmp = ""
+      xs.each do |x|
+        if ((tmp + x).size > MAX_LINE_LENGTH)
+          r << tmp << "\r\n "
+          tmp = ""
+        end
+        tmp += x
+      end
+      r << tmp << "\r\n"
+
+    end
+    
     # Print this components properties
     def print_properties
       s = ""
@@ -146,8 +162,7 @@ module Icalendar
            # Property value
            value = ":#{val.to_ical}" 
            escaped = prelude + value.gsub("\\", "\\\\").gsub("\n", "\\n").gsub(",", "\\,").gsub(";", "\\;")
-           s << escaped.slice!(0, MAX_LINE_LENGTH) << "\r\n " while escaped.size > MAX_LINE_LENGTH
-           s << escaped << "\r\n"
+           s << _split_by_maxlen(escaped)
            s.gsub!(/ *$/, '')
          else 
            prelude = "#{key.gsub(/_/, '-').upcase}" 
@@ -155,8 +170,7 @@ module Icalendar
                params = print_parameters(v)
                value = ":#{v.to_ical}"
                escaped = prelude + params + value.gsub("\\", "\\\\").gsub("\n", "\\n").gsub(",", "\\,").gsub(";", "\\;")
-               s << escaped.slice!(0, MAX_LINE_LENGTH) << "\r\n " while escaped.size > MAX_LINE_LENGTH
-               s << escaped << "\r\n"
+               s << _split_by_maxlen(escaped)
                s.gsub!(/ *$/, '')
             end
          end
